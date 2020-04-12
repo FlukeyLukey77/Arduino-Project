@@ -1,0 +1,111 @@
+//PIN ASSIGNMENTS
+#define lightPin 0
+#define fanPin 1
+#define tempPin 2
+#define dimmerPin 3
+#define buttonPin 4
+
+//CONSTANT VALUES
+const float plaTemp = 20.0;
+const float petTemp = 30.0;
+const float absTemp = 50.0;
+
+//VARIABLES
+int dimmerValue;
+int lightBrightness;
+
+int buttonValue;
+
+int flashes;
+int i;
+
+float temp;
+float setTemp;
+float tempDiff;
+
+int fanSpeed;
+
+
+void setup() {
+	pinMode(lightPin, OUTPUT);
+	pinMode(fanPin, OUTPUT);
+	pinMode(tempPin, INPUT);
+	pinMode(dimmerPin, INPUT);
+	pinMode(buttonPin, INPUT);
+}
+
+
+void loop() {
+	//TEMPERATURE
+	temp = Thermistor(analogRead(tempPin));
+	
+	//LED CONTROL
+	dimmerValue = analogRead(dimmerPin);
+	map(dimmerValue, 0, 1023, 0, 255);
+	analogWrite(lightBrightness, lightPin);
+
+	//BUTTONS
+	buttonValue = analogRead(buttonPin);
+
+	if(buttonValue <= 143)
+	{
+		setTemp = plaTemp;		//PLA
+		Flash(1);				//Flash LEDS once
+	}
+	else if((buttonValue >= 144) && (buttonValue <= 473))
+	{
+		setTemp = petTemp;		//PET
+		Flash(2);
+	}
+	else if((buttonValue >= 474) && (buttonValue <= 841))
+	{
+		setTemp = absTemp;		//ABS
+		Flash(3);
+	}
+	else
+	{
+		i = 0; 					//Reset flashes
+	}
+
+
+	//TEMPERATURE CONTROL
+	tempDiff = temp - setTemp;
+
+	if(tempDiff <= 0)
+	{
+		fanSpeed = 0; 
+	}
+	else if(tempDiff > 0 && tempDiff <= 30)
+	{
+		fanSpeed = map(tempDiff, 0, 30, 0, 255);
+	}
+	else 
+	{
+		fanSpeed = 255;
+	}
+	
+}
+//TEMPERATURE CALCULATIONS
+float Thermistor(int RawADC)
+{
+	float Temp;
+	Temp = log(10000.0*((1024.0/RawADC-1))); 
+	Temp = 1 / (0.001129148 + (0.000234125 + (0.0000000876741 * Temp * Temp ))* Temp );
+	Temp = Temp - 273.15;            // Convert Kelvin to Celcius
+	return Temp;
+}
+
+//FLASH LED ROUTINE
+int Flash(int flashes)
+{
+	delay(1000);
+	for(i; i < flashes; i++)
+		{
+			digitalWrite(lightPin,LOW);
+			delay(500);
+			digitalWrite(lightPin,HIGH);
+			delay(500);
+			digitalWrite(lightPin,LOW);
+			delay(500);
+		}
+}
